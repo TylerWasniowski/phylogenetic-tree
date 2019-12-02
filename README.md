@@ -12,6 +12,7 @@ Then run `git clone https://github.com/TylerWasniowski/phylogenetic-tree.git`
 
 # Running
 ## Full pipeline (from sequence to tree)
+Prepare a fasta format file
 
 Run `cd phylogenetic-tree`
 
