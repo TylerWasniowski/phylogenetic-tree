@@ -9,6 +9,15 @@ class TreeNode:
         self.left = None
         self.right = None
 
+    def length(self):
+        ret = 0
+        if self.left is not None:
+            ret = max(ret, self.left.length())
+        if self.right is not None:
+            ret = max(ret, self.right.length())
+
+        return ret + 1
+
     def width(self):
         ret = 0
         if self.left is not None:
@@ -28,13 +37,13 @@ class TreeNode:
         return node_str
 
 
-def compute(dist_matrix, render=False):
+def compute(dist_matrix, verbose=False):
     # Make a copy so we do not mutate the original
     dist_matrix = np.copy(dist_matrix)
     # Give each node a name: start with A, then B, then C, etc.
     index_to_tree = list(map(lambda i: TreeNode(chr(i + ord('A'))), range(len(dist_matrix))))
 
-    if render:
+    if verbose:
         print([str(tree) for tree in index_to_tree])
         print(dist_matrix)
 
@@ -64,14 +73,14 @@ def compute(dist_matrix, render=False):
         index_to_tree[selected[0]] = new_node
         del index_to_tree[selected[1]]
 
-        if render:
+        if verbose:
             print([str(tree) for tree in index_to_tree])
             print(dist_matrix)
 
     return index_to_tree[0]
 
 
-def draw(tree, width=1500, height=750):
+def draw(tree, shrink=False, width=1500, height=900):
     # Make empty image
     img = np.ones((height, width, 3), np.uint8) * 255
 
@@ -80,17 +89,23 @@ def draw(tree, width=1500, height=750):
         start_point = (int(width * 0.5), int(0))
         end_point = (int(width * 0.5), int(height * 0.08))
         cv.line(img, start_point, end_point, (0, 0, 0), 2)
-        __draw_recurse(img, tree, end_point, int(width * 0.9), int(height * 0.92))
+        if shrink:
+            __draw_recurse(img, tree, end_point, shrink, int(width * 0.9), int(height * 0.92) // tree.length())
+        else:
+            __draw_recurse(img, tree, end_point, shrink, int(width * 0.9), int(height * 0.92))
 
     cv.imshow("Phylogenetic Tree", img)
     cv.waitKey(0)
     cv.destroyAllWindows()
 
 
-def __draw_recurse(img, tree, origin_point, width, height):
+def __draw_recurse(img, tree, origin_point, shrink, width, height):
     # Draw node name
     name_point = (origin_point[0] + 5, origin_point[1] - 7)
-    cv.putText(img, tree.name, name_point, cv.FONT_HERSHEY_SIMPLEX, 1.5, (252, 94, 3), 3)
+    if shrink:
+        cv.putText(img, tree.name, name_point, cv.FONT_HERSHEY_SIMPLEX, 0.6, (252, 94, 3), 1)
+    else:
+        cv.putText(img, tree.name, name_point, cv.FONT_HERSHEY_SIMPLEX, 1.5, (252, 94, 3), 3)
 
     # No more children to draw
     if tree.left is None and tree.right is None:
@@ -103,29 +118,49 @@ def __draw_recurse(img, tree, origin_point, width, height):
     cv.line(img, start_point, end_point, (0, 0, 0), 2)
 
     if tree.left is not None:
-        left_length = int(height * (1 - tree.left.height / tree.height))
+        if shrink:
+            left_length = height
+        else:
+            left_length = int(height * (1 - tree.left.height / tree.height))
         # Find starting point of left node
         left_origin = (start_point[0], start_point[1] + left_length)
         # Draw vertical line to left node
         cv.line(img, start_point, left_origin, (0, 0, 0), 2)
         # Draw left distance text
-        left_dist = tree.height - tree.left.height
-        dist_point = (start_point[0] + 5, start_point[1] + left_length // 2)
-        cv.putText(img, str(left_dist), dist_point, cv.FONT_HERSHEY_SIMPLEX, 1.2, (104, 123, 252), 2)
+        left_dist = int(round(tree.height - tree.left.height))
+        if shrink:
+            dist_point = (start_point[0] - 20, start_point[1] + left_length // 2)
+            cv.putText(img, str(left_dist), dist_point, cv.FONT_HERSHEY_SIMPLEX, 0.5, (104, 123, 252), 2)
+        else:
+            dist_point = (start_point[0] - 30, start_point[1] + left_length // 2)
+            cv.putText(img, str(left_dist), dist_point, cv.FONT_HERSHEY_SIMPLEX, 1.2, (104, 123, 252), 2)
         # Draw left node and it's children
-        __draw_recurse(img, tree.left, left_origin, width // 2, height - left_length)
+        if shrink:
+            __draw_recurse(img, tree.left, left_origin, shrink, width // 2, height)
+        else:
+            __draw_recurse(img, tree.left, left_origin, shrink, width // 2, height - left_length)
     if tree.right is not None:
-        right_length = int(height * (1 - tree.right.height / tree.height))
+        if shrink:
+            right_length = height
+        else:
+            right_length = int(height * (1 - tree.right.height / tree.height))
         # Find starting point of right node
         right_origin = (end_point[0], end_point[1] + right_length)
         # Draw vertical line to right node
         cv.line(img, end_point, right_origin, (0, 0, 0), 2)
         # Draw right distance text
-        right_dist = tree.height - tree.right.height
-        dist_point = (end_point[0] + 5, start_point[1] + right_length // 2)
-        cv.putText(img, str(right_dist), dist_point, cv.FONT_HERSHEY_SIMPLEX, 1.3, (104, 123, 252), 2)
+        right_dist = int(round(tree.height - tree.right.height))
+        if shrink:
+            dist_point = (end_point[0], start_point[1] + right_length // 2)
+            cv.putText(img, str(right_dist), dist_point, cv.FONT_HERSHEY_SIMPLEX, 0.5, (104, 123, 252), 2)
+        else:
+            dist_point = (end_point[0] + 5, start_point[1] + right_length // 2)
+            cv.putText(img, str(right_dist), dist_point, cv.FONT_HERSHEY_SIMPLEX, 1.2, (104, 123, 252), 2)
         # Draw right node and it's children
-        __draw_recurse(img, tree.right, right_origin, width // 2, height - right_length)
+        if shrink:
+            __draw_recurse(img, tree.right, right_origin, shrink, width // 2, height)
+        else:
+            __draw_recurse(img, tree.right, right_origin, shrink, width // 2, height - right_length)
 
 
 lecture_data = np.array([
