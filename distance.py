@@ -40,7 +40,7 @@ def compute(filename, procs=None, verbose=False):
             if verbose:
                 print(dist_matrix)
                 print("Scores:", scores)
-                print("Time:", end - start)
+                print("Time:", end - start, "seconds")
 
             return dist_matrix
 

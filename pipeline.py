@@ -1,4 +1,5 @@
 import argparse
+from time import time
 
 import distance
 import tree
@@ -21,4 +22,7 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", "-v", help="Print extra info", type=bool, default=False)
     args = parser.parse_args()
 
+    start = time()
     draw(args.filename, procs=args.procs, shrink=args.shrink, verbose=args.verbose)
+    end = time()
+    print("Total pipeline time:", end - start, "seconds")
