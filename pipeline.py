@@ -12,7 +12,7 @@ def draw(filename, procs=None, shrink=False, verbose=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--filename", "-f", help="File of sequences", type=str)
+    parser.add_argument("--filename", "-f", help="File of sequences (fasta format)", type=str)
     parser.add_argument("--procs",
                         "-p",
                         help="Number of processes to use for pairwise alignment",
